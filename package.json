@@ -1,0 +1,22 @@
+{
+  "name": "metodo-greco-sistema",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:setup": "node scripts/setup-db.mjs",
+    "db:seed": "node scripts/setup-db.mjs --seed"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@neondatabase/serverless": "^1.2.1",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.17",
+    "next": "^15.5.29",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}
