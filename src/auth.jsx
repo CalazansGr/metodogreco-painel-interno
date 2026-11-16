@@ -4,7 +4,9 @@ import { supabase } from './supabase';
 const Ctx = createContext(null);
 export const useAuth = () => useContext(Ctx);
 
-const readMode = () => { try { return JSON.parse(sessionStorage.getItem('greco_mode')); } catch { return null; } };
+const readMode = () => {
+  try { return JSON.parse(sessionStorage.getItem('greco_mode') || localStorage.getItem('greco_mode')); } catch { return null; }
+};
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = carregando
@@ -25,8 +27,14 @@ export function AuthProvider({ children }) {
     supabase.from('profiles').select('*').eq('id', uid).single().then(({ data }) => setProfile(data || null));
   }, [uid, session === undefined]);
 
-  const setMode = useCallback((m) => {
-    try { m ? sessionStorage.setItem('greco_mode', JSON.stringify(m)) : sessionStorage.removeItem('greco_mode'); } catch { /* ignora */ }
+  // remember=true guarda a escolha neste aparelho (abre direto no painel escolhido)
+  const setMode = useCallback((m, remember = false) => {
+    try {
+      if (m) {
+        sessionStorage.setItem('greco_mode', JSON.stringify(m));
+        remember ? localStorage.setItem('greco_mode', JSON.stringify(m)) : localStorage.removeItem('greco_mode');
+      } else { sessionStorage.removeItem('greco_mode'); localStorage.removeItem('greco_mode'); }
+    } catch { /* ignora */ }
     setModeState(m);
   }, []);
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { supabase } from '../../supabase';
-import { q, useData, getBillingMap, brl } from '../../lib';
+import { q, useData, getBillingMap, brl, fmtH } from '../../lib';
 import { Async } from '../../components';
 
 export default function PagamentosAdmin() {
@@ -26,10 +26,10 @@ export default function PagamentosAdmin() {
             <div className="card"><div className="muted">Alunos com pendência</div><div className="stat" style={{ color: 'var(--bad)' }}>{pend}</div></div>
           </div>
           <h2>Situação por aluno</h2>
-          <div className="tablewrap"><table><thead><tr><th>Aluno</th><th>Família</th><th>Créditos</th><th>Pendentes</th><th>Agendadas sem crédito</th></tr></thead><tbody>
+          <div className="tablewrap"><table><thead><tr><th>Aluno</th><th>Família</th><th>Créditos (h)</th><th>Pendentes (h)</th><th>Agendadas sem crédito (h)</th></tr></thead><tbody>
             {rows.map((r) => (
-              <tr key={r.id}><td><Link to={`/admin/alunos/${r.id}`}>{r.name}</Link></td><td>{r.family}</td><td>{r.b.balance}</td>
-                <td style={{ color: r.b.pending ? 'var(--bad)' : undefined, fontWeight: r.b.pending ? 700 : 400 }}>{r.b.pending}</td><td>{r.b.scheduledUncovered}</td></tr>
+              <tr key={r.id}><td><Link to={`/admin/alunos/${r.id}`}>{r.name}</Link></td><td>{r.family}</td><td>{fmtH(r.b.balance)}</td>
+                <td style={{ color: r.b.pending ? 'var(--bad)' : undefined, fontWeight: r.b.pending ? 700 : 400 }}>{fmtH(r.b.pending)}</td><td>{fmtH(r.b.scheduledUncovered)}</td></tr>
             ))}
           </tbody></table></div>
         </>);

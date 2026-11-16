@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, Navigate } from 'react-router-dom';
 import { supabase } from './supabase';
 import { useAuth } from './auth';
-import { q, rpc, useData, getSlots, getBilling, brl, fmtBirth } from './lib';
+import { q, rpc, useData, getSlots, getBilling, brl, fmtBirth, fmtH } from './lib';
 import { fmtDateTime, fmtTime, WEEKDAYS } from './dates';
 
 // ---------- Básicos ----------
@@ -29,7 +29,7 @@ export function useAction() {
 
 // ---------- Estrutura ----------
 const LINKS = {
-  admin: [['/admin', 'Painel', true], ['/admin/aulas', 'Aulas'], ['/admin/alunos', 'Alunos'], ['/admin/familias', 'Famílias'], ['/admin/professores', 'Professores'], ['/admin/pagamentos', 'Pagamentos'], ['/admin/senha', 'Minha senha']],
+  admin: [['/admin', 'Painel', true], ['/admin/planilha', 'Planilha'], ['/admin/aulas', 'Aulas'], ['/admin/alunos', 'Alunos'], ['/admin/familias', 'Famílias'], ['/admin/professores', 'Professores'], ['/admin/pagamentos', 'Pagamentos'], ['/admin/senha', 'Minha senha']],
   teacher: [['/professor', 'Minha agenda', true], ['/professor/disponibilidade', 'Meus horários'], ['/professor/senha', 'Minha senha']],
   guardian: [['/familia', 'Início', true], ['/familia/agendar', 'Agendar aula'], ['/familia/ficha', 'Ficha'], ['/familia/pagamentos', 'Pagamentos'], ['/familia/senha', 'Minha senha'], ['/perfil', 'Trocar perfil']],
   student: [['/familia', 'Início', true], ['/familia/ficha', 'Minha ficha'], ['/perfil', 'Trocar perfil']],
@@ -41,7 +41,7 @@ export function Guard({ role }) {
   if (loading) return <div className="center"><Loading /></div>;
   if (!profile) return <Navigate to="/login" replace />;
   if (profile.role !== role) return <Navigate to="/" replace />;
-  if (role === 'family' && !mode) return <Navigate to="/perfil" replace />;
+  if (role === 'family' && (!mode || mode.uid !== profile.id)) return <Navigate to="/perfil" replace />;
   const key = role === 'family' ? (mode.type === 'guardian' ? 'guardian' : 'student') : role;
   const who = role === 'admin' ? `Admin · ${profile.name}` : role === 'family' && mode.type === 'student' ? `Aluno: ${mode.studentName}` : profile.name;
   return (
@@ -203,8 +203,8 @@ export function NoteForm({ studentId, onSaved }) {
 // ---------- Pagamentos ----------
 export function BillingBadge({ b }) {
   if (!b) return null;
-  if (b.pending > 0) return <span className="badge cancelada">{b.pending} aula(s) pendente(s)</span>;
-  return <span className="badge realizada">{b.balance} crédito(s)</span>;
+  if (b.pending > 0) return <span className="badge cancelada">{fmtH(b.pending)} h pendente(s)</span>;
+  return <span className="badge realizada">{fmtH(b.balance)} h de crédito</span>;
 }
 
 export function BillingSummary({ student, admin = false, refreshKey, onChange }) {
@@ -216,15 +216,15 @@ export function BillingSummary({ student, admin = false, refreshKey, onChange })
       <h2 style={{ marginTop: 0 }}>{student.name}</h2>
       <Async state={state}>{(b) => (<>
         <div className="grid">
-          <div><div className="muted">Créditos disponíveis</div><div className="stat" style={{ color: 'var(--ok)' }}>{b.balance}</div></div>
-          <div><div className="muted">Aulas pendentes de pagamento</div><div className="stat" style={{ color: b.pending ? 'var(--bad)' : 'var(--muted)' }}>{b.pending}</div></div>
-          <div><div className="muted">Aulas agendadas</div><div className="stat">{b.scheduled}</div></div>
+          <div><div className="muted">Créditos (h) disponíveis</div><div className="stat" style={{ color: 'var(--ok)' }}>{fmtH(b.balance)}</div></div>
+          <div><div className="muted">Horas pendentes de pagamento</div><div className="stat" style={{ color: b.pending ? 'var(--bad)' : 'var(--muted)' }}>{fmtH(b.pending)}</div></div>
+          <div><div className="muted">Horas agendadas</div><div className="stat">{fmtH(b.scheduled)}</div></div>
         </div>
-        {b.scheduledUncovered > 0 && <Alert>{b.scheduledUncovered} das aulas agendadas ainda não têm crédito. Combine o pagamento com a escola.</Alert>}
-        {b.pending > 0 && <Alert>Há {b.pending} aula(s) já realizada(s) sem pagamento registrado.</Alert>}
+        {b.scheduledUncovered > 0 && <Alert>{fmtH(b.scheduledUncovered)} h das aulas agendadas ainda não têm crédito. Combine o pagamento com a escola.</Alert>}
+        {b.pending > 0 && <Alert>Há {fmtH(b.pending)} h de aulas já realizadas sem pagamento registrado.</Alert>}
         <Alert>{error}</Alert>
 
-        <h3 style={{ marginTop: '1rem' }}>Aulas que consumiram crédito</h3>
+        <h3 style={{ marginTop: '1rem' }}>Aulas que consumiram horas</h3>
         {b.history.length === 0 ? <p className="muted">Nenhuma aula realizada ainda.</p> : (
           <div className="tablewrap"><table><thead><tr><th>Data</th><th>Professor</th><th>Situação</th><th>Pagamento</th></tr></thead><tbody>
             {b.history.map((l) => (
@@ -236,9 +236,9 @@ export function BillingSummary({ student, admin = false, refreshKey, onChange })
 
         <h3 style={{ marginTop: '1rem' }}>Pagamentos registrados</h3>
         {b.payments.length === 0 ? <p className="muted">Nenhum pagamento registrado.</p> : (
-          <div className="tablewrap"><table><thead><tr><th>Data</th><th>Aulas</th><th>Valor</th><th>Forma</th><th>Obs.</th>{admin && <th></th>}</tr></thead><tbody>
+          <div className="tablewrap"><table><thead><tr><th>Data</th><th>Horas</th><th>Valor</th><th>Forma</th><th>Obs.</th>{admin && <th></th>}</tr></thead><tbody>
             {b.payments.map((p) => (
-              <tr key={p.id}><td>{new Date(p.paid_at + 'T12:00:00').toLocaleDateString('pt-BR')}</td><td>{p.credits}</td><td>{brl(p.amount_cents)}</td><td>{p.method || '—'}</td><td>{p.note || ''}</td>
+              <tr key={p.id}><td>{new Date(p.paid_at + 'T12:00:00').toLocaleDateString('pt-BR')}</td><td>{fmtH(p.credits)}</td><td>{brl(p.amount_cents)}</td><td>{p.method || '—'}</td><td>{p.note || ''}</td>
                 {admin && <td><button className="btn small danger" onClick={() => confirm('Remover este pagamento?') && remove(p.id)}>Remover</button></td>}</tr>
             ))}
           </tbody></table></div>

@@ -20,6 +20,7 @@ import AdminFamilias from './pages/admin/Familias';
 import AdminNovaFamilia from './pages/admin/NovaFamilia';
 import AdminProfessores from './pages/admin/Professores';
 import AdminPagamentos from './pages/admin/Pagamentos';
+import AdminPlanilha from './pages/admin/Planilha';
 import ProfHome from './pages/professor/Home';
 import ProfAluno from './pages/professor/Aluno';
 import ProfDisponibilidade from './pages/professor/Disponibilidade';
@@ -63,6 +64,7 @@ function App() {
 
           <Route path="/admin" element={<Guard role="admin" />}>
             <Route index element={<AdminHome />} />
+            <Route path="planilha" element={<AdminPlanilha />} />
             <Route path="aulas" element={<AdminAulas />} />
             <Route path="aulas/nova" element={<AdminNovaAula />} />
             <Route path="alunos" element={<AdminAlunos />} />

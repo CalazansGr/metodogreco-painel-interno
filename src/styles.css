@@ -59,3 +59,18 @@ th { background: #eef0d6; }
 dl { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; margin: 0; }
 dt { color: var(--muted); font-size: .88rem; } dd { margin: 0; }
 @media (max-width: 600px) { h1 { font-size: 1.35rem; } }
+
+/* ---- Planilha (admin) ---- */
+.wide { position: relative; left: 50%; transform: translateX(-50%); width: min(1500px, 97vw); }
+.sheet table { min-width: 1100px; }
+.sheet th { white-space: nowrap; position: sticky; top: 0; }
+.sheet th.calc, .sheet td.calc { background: #f1ecd0; }
+.sheet td { padding: .15rem .25rem; }
+.sheet td.num { text-align: right; padding-right: .7rem; white-space: nowrap; }
+.sheet tfoot td { background: #eef0d6; padding: .5rem .5rem; }
+.cell { border: 1px solid transparent; background: transparent; padding: .35rem .45rem; border-radius: 6px; min-width: 90px; width: 100%; font-size: .9rem; }
+.cell:hover { border-color: var(--line); }
+.cell:focus { outline: none; background: #fff; border-color: var(--navy); }
+.cell.ok { background: #d9ecd5; }
+.cell.err { background: #f6dcd6; }
+.cell.saving { opacity: .6; }

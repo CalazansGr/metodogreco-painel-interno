@@ -112,10 +112,20 @@ await db.query("insert into student_notes(student_id,teacher_id,content,visible_
 check('família não vê nota interna', (await as(famA, () => rows('select * from student_notes'))).every(n => n.visible_to_family));
 check('professor vê nota interna', (await as(teacher, () => rows('select * from student_notes'))).length === 2);
 
+// ----- Dados internos (planilha) -----
+console.log('\nDados internos do admin (student_admin)');
+await db.query("insert into student_admin(student_id, phone, price_cents, obs) values ($1,'21 99999', 7000, 'pediu desconto')", [sA.id]);
+check('família NÃO lê preço/observações internas', (await as(famA, () => rows('select * from student_admin'))).length === 0);
+check('professor NÃO lê dados internos', (await as(teacher, () => rows('select * from student_admin'))).length === 0);
+check('família NÃO escreve dados internos', !!(await as(famA, () => fails("insert into student_admin(student_id) values ($1)", [sB.id]))));
+check('admin lê dados internos', (await as(admin, () => rows('select * from student_admin'))).length === 1);
+check('admin grava dados internos', (await as(admin, () => fails("insert into student_admin(student_id, price_cents) values ($1, 6500)", [sB.id]))) === null);
+check('pagamento aceita meia hora (8,5)', (await as(admin, () => fails('insert into payments(student_id,credits) values ($1, 8.5)', [sA.id]))) === null);
+
 // ----- Admin -----
 console.log('\nAdmin');
 check('admin vê todos os alunos', (await as(admin, () => rows('select * from students'))).length === 2);
-check('admin vê todos os pagamentos', (await as(admin, () => rows('select * from payments'))).length === 2);
+check('admin vê todos os pagamentos', (await as(admin, () => rows('select * from payments'))).length === 3);
 check('admin registra pagamento', (await as(admin, () => fails('insert into payments(student_id,credits) values ($1,4)', [sA.id]))) === null);
 check('admin agenda (WhatsApp) mesmo fora da disponibilidade', (await as(admin, () => fails("select book_lesson($1,$2,$3,60,'x','whatsapp')", [sB.id, teacher, at('20:00')]))) === null);
 check('admin muda papel de usuário', (await as(admin, async () => (await db.query("update profiles set role='teacher' where id=$1", [nobody])).affectedRows)) === 1);

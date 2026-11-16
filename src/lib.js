@@ -72,23 +72,30 @@ export async function getSlots(teacherId, dateStr, duration = 60) {
 }
 
 // ---------- Créditos / pagamentos ----------
-// Regra: aula "realizada" ou "faltou" consome 1 crédito; os créditos cobrem as aulas
-// mais antigas primeiro e o que passar disso fica pendente.
+// Tudo em HORAS. Aula "realizada" ou "faltou" consome a duração da aula; as horas pagas
+// cobrem as aulas mais antigas primeiro e o que passar disso fica pendente.
+export const fmtH = (h) => Number(h || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const hrs = (l) => l.duration_min / 60;
+const round = (n) => Math.round(n * 100) / 100;
+
 export async function getBilling(studentId) {
   const [payments, lessons] = await Promise.all([
     q(supabase.from('payments').select('*').eq('student_id', studentId).order('paid_at', { ascending: false }).order('id', { ascending: false })),
-    q(supabase.from('lessons').select('id,starts_at,status,teacher:profiles(name)').eq('student_id', studentId).in('status', ['realizada', 'faltou', 'agendada']).order('starts_at')),
+    q(supabase.from('lessons').select('id,starts_at,duration_min,status,teacher:profiles(name)').eq('student_id', studentId).in('status', ['realizada', 'faltou', 'agendada']).order('starts_at')),
   ]);
-  const purchased = payments.reduce((a, p) => a + p.credits, 0);
+  const purchased = round(payments.reduce((a, p) => a + Number(p.credits), 0));
   const consumed = lessons.filter((l) => l.status !== 'agendada');
   const scheduled = lessons.filter((l) => l.status === 'agendada');
-  const history = consumed.map((l, i) => ({ ...l, paid: i < purchased })).reverse();
-  const balance = Math.max(0, purchased - consumed.length);
+  const used = round(consumed.reduce((a, l) => a + hrs(l), 0));
+  let acc = 0;
+  const history = consumed.map((l) => { acc += hrs(l); return { ...l, paid: acc <= purchased + 1e-9 }; }).reverse();
+  const balance = round(Math.max(0, purchased - used));
+  const scheduledH = round(scheduled.reduce((a, l) => a + hrs(l), 0));
   return {
-    payments, purchased, used: consumed.length, balance,
-    pending: Math.max(0, consumed.length - purchased),
-    scheduled: scheduled.length,
-    scheduledUncovered: Math.max(0, scheduled.length - balance),
+    payments, purchased, used, balance,
+    pending: round(Math.max(0, used - purchased)),
+    scheduled: scheduledH,
+    scheduledUncovered: round(Math.max(0, scheduledH - balance)),
     history,
   };
 }
@@ -97,16 +104,16 @@ export async function getBilling(studentId) {
 export async function getBillingMap() {
   const [payments, lessons] = await Promise.all([
     q(supabase.from('payments').select('student_id,credits')),
-    q(supabase.from('lessons').select('student_id,status').in('status', ['realizada', 'faltou', 'agendada'])),
+    q(supabase.from('lessons').select('student_id,status,duration_min').in('status', ['realizada', 'faltou', 'agendada'])),
   ]);
   const m = {};
   const get = (id) => (m[id] ||= { purchased: 0, consumed: 0, scheduled: 0 });
-  payments.forEach((p) => { get(p.student_id).purchased += p.credits; });
-  lessons.forEach((l) => { l.status === 'agendada' ? get(l.student_id).scheduled++ : get(l.student_id).consumed++; });
+  payments.forEach((p) => { get(p.student_id).purchased += Number(p.credits); });
+  lessons.forEach((l) => { l.status === 'agendada' ? (get(l.student_id).scheduled += hrs(l)) : (get(l.student_id).consumed += hrs(l)); });
   const out = {};
   for (const [id, v] of Object.entries(m)) {
-    const balance = Math.max(0, v.purchased - v.consumed);
-    out[id] = { balance, pending: Math.max(0, v.consumed - v.purchased), scheduled: v.scheduled, scheduledUncovered: Math.max(0, v.scheduled - balance) };
+    const balance = round(Math.max(0, v.purchased - v.consumed));
+    out[id] = { balance, pending: round(Math.max(0, v.consumed - v.purchased)), scheduled: round(v.scheduled), scheduledUncovered: round(Math.max(0, v.scheduled - balance)) };
   }
   return new Proxy(out, { get: (t, k) => t[k] || { balance: 0, pending: 0, scheduled: 0, scheduledUncovered: 0 } });
 }

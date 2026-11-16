@@ -51,7 +51,7 @@ function PaymentForm({ studentId, onSaved }) {
     <form onSubmit={submit} className="card stack">
       <h3>Registrar pagamento</h3>
       <div className="row">
-        <label>Nº de aulas pagas<input type="number" min="1" value={f.credits} onChange={set('credits')} required /></label>
+        <label>Horas pagas<input type="number" min="0.5" step="0.5" value={f.credits} onChange={set('credits')} required /></label>
         <label>Valor (R$)<input inputMode="decimal" value={f.amount} onChange={set('amount')} placeholder="0,00" /></label>
         <label>Forma<select value={f.method} onChange={set('method')}><option>Pix</option><option>Dinheiro</option><option>Cartão</option><option>Transferência</option></select></label>
         <label>Data<input type="date" value={f.paidAt} onChange={set('paidAt')} required /></label>

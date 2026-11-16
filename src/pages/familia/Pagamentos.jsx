@@ -8,7 +8,7 @@ export default function Pagamentos() {
   return (
     <>
       <h1>Pagamentos e créditos</h1>
-      <p className="muted">Cada aula realizada (ou falta sem aviso) usa 1 crédito. Créditos são as aulas que já foram pagas.</p>
+      <p className="muted">Cada aula realizada (ou falta sem aviso) usa as horas da aula. Créditos são as horas que já foram pagas.</p>
       <Async state={st}>{(students) => students.map((s) => <BillingSummary key={s.id} student={s} />)}</Async>
     </>
   );

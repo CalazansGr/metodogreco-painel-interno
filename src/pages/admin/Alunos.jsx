@@ -18,7 +18,7 @@ export default function Alunos() {
       <h1>Alunos</h1>
       <p><Link className="btn" to="/admin/familias/nova">+ Nova família / aluno</Link></p>
       <Async state={state}>{(rows) => (
-        <div className="tablewrap"><table><thead><tr><th>Aluno</th><th>Série</th><th>Nível</th><th>Família</th><th>Créditos</th></tr></thead><tbody>
+        <div className="tablewrap"><table><thead><tr><th>Aluno</th><th>Série</th><th>Nível</th><th>Família</th><th>Créditos (h)</th></tr></thead><tbody>
           {rows.map((s) => <tr key={s.id}><td><Link to={`/admin/alunos/${s.id}`}>{s.name}</Link></td><td>{s.grade || '—'}</td><td>{s.level || '—'}</td><td>{s.family_name}</td><td><BillingBadge b={s.b} /></td></tr>)}
         </tbody></table></div>
       )}</Async>

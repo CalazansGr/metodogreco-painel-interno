@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { fetchLessons, getBilling, useData } from '../../lib';
+import { fetchLessons, getBilling, useData, fmtH } from '../../lib';
 import { Async, LessonList, Alert } from '../../components';
 import { useFamilyStudents } from './shared';
 
@@ -27,8 +27,8 @@ export default function FamiliaHome() {
         {billings.map(({ s, b }) => (
           <Link key={s.id} to="/familia/pagamentos" className="card" style={{ display: 'block' }}>
             <b>{s.name}</b>: {b.pending > 0
-              ? <span style={{ color: 'var(--bad)' }}>{b.pending} aula(s) pendente(s) de pagamento</span>
-              : <span style={{ color: 'var(--ok)' }}>{b.balance} crédito(s) disponível(is)</span>}
+              ? <span style={{ color: 'var(--bad)' }}>{fmtH(b.pending)} h pendente(s) de pagamento</span>
+              : <span style={{ color: 'var(--ok)' }}>{fmtH(b.balance)} h de crédito disponível</span>}
           </Link>
         ))}
         {next.length === 0

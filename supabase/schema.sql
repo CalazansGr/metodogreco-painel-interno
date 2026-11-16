@@ -75,13 +75,25 @@ create table if not exists public.student_notes (
 create table if not exists public.payments (
   id bigint generated always as identity primary key,
   student_id bigint not null references public.students(id) on delete cascade,
-  credits int not null check (credits > 0),
+  credits numeric(7,2) not null check (credits > 0), -- HORAS pagas (aceita meia hora: 8,5)
   amount_cents int not null default 0 check (amount_cents >= 0),
   method text,
   note text,
   paid_at date not null default current_date,
   created_by uuid,
   created_at timestamptz not null default now()
+);
+-- Atualização para bancos criados antes: créditos passam a ser em horas (decimal)
+alter table public.payments alter column credits type numeric(7,2);
+
+-- Dados internos do aluno, usados pela "Planilha" do admin. Só o admin lê e escreve:
+-- preço, observações e celular NÃO ficam visíveis para famílias nem professores.
+create table if not exists public.student_admin (
+  student_id bigint primary key references public.students(id) on delete cascade,
+  phone text,
+  price_cents int not null default 0 check (price_cents >= 0), -- preço por hora
+  whatsapp_type text not null default 'normal' check (whatsapp_type in ('normal','business')),
+  obs text
 );
 
 -- ---------- Perfil criado automaticamente a cada cadastro ----------
@@ -136,6 +148,7 @@ alter table public.availability enable row level security;
 alter table public.lessons enable row level security;
 alter table public.student_notes enable row level security;
 alter table public.payments enable row level security;
+alter table public.student_admin enable row level security;
 
 -- profiles: cada um vê o próprio; admin vê todos; membros veem os professores
 drop policy if exists profiles_select on public.profiles;
@@ -201,6 +214,11 @@ create policy payments_select on public.payments for select to authenticated
   using (public.is_admin() or public.owns_student(student_id));
 drop policy if exists payments_admin_write on public.payments;
 create policy payments_admin_write on public.payments for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- student_admin: somente administrador
+drop policy if exists student_admin_only on public.student_admin;
+create policy student_admin_only on public.student_admin for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 
 -- ---------- Funções (RPC) para escrever aulas com segurança ----------
