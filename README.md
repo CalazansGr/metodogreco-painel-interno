@@ -1,4 +1,6 @@
-# Método Greco — Sistema de aulas
+# Método Greco — Painel Interno
+
+Endereço no GitHub Pages: `https://calazansgr.github.io/metodogreco-painel-interno/`
 
 Site estático (Vite + React) no **GitHub Pages**, com **Supabase** para login, banco de dados e segurança (RLS).
 Perfis: administrador, professor e família (pais + alunos no mesmo login).
